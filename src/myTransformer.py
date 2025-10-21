@@ -4,14 +4,14 @@ from src.myLayers import EncoderLayer, DecoderLayer
 from src.units import PositionalEncoding 
 
 class Encoder(nn.Module):
-    def __init__(self, num_layers, d_model, num_heads, d_ff, input_vocab_size, max_seq_len):
+    def __init__(self, num_layers, d_model, num_heads, d_ff, input_vocab_size, max_seq_len, use_residual=True, use_layer_norm=True):
         super().__init__()
         self.token_embed = nn.Embedding(input_vocab_size, d_model)
 
         self.position_embed = PositionalEncoding(d_model, max_seq_len)
 
         self.layers = nn.ModuleList([
-            EncoderLayer(d_model, num_heads, d_ff) for _ in range(num_layers)
+            EncoderLayer(d_model, num_heads, d_ff, use_residual, use_layer_norm) for _ in range(num_layers)
         ])
         
     def forward(self, src_seq, src_mask):
@@ -26,13 +26,13 @@ class Encoder(nn.Module):
         return x 
 
 class Decoder(nn.Module):
-    def __init__(self, num_layers, d_model, num_heads, d_ff, output_vocab_size, max_seq_len):
+    def __init__(self, num_layers, d_model, num_heads, d_ff, output_vocab_size, max_seq_len, use_residual=True, use_layer_norm=True):
         super().__init__()
         self.token_embed = nn.Embedding(output_vocab_size, d_model)
         self.position_embed = PositionalEncoding(d_model, max_seq_len)
         
         self.layers = nn.ModuleList([
-            DecoderLayer(d_model, num_heads, d_ff) for _ in range(num_layers)
+            DecoderLayer(d_model, num_heads, d_ff, use_residual, use_layer_norm) for _ in range(num_layers)
         ])
         
     def forward(self, tgt_seq, enc_output, src_mask, tgt_mask):
@@ -47,7 +47,7 @@ class Decoder(nn.Module):
         return x 
 
 class Transformer(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, use_residual=True, use_layer_norm=True):
         super().__init__()
 
         self.encoder = Encoder(
@@ -56,7 +56,9 @@ class Transformer(nn.Module):
             num_heads=config.num_heads,
             d_ff=config.d_ff,
             input_vocab_size=config.src_vocab_size,
-            max_seq_len=config.max_seq_len
+            max_seq_len=config.max_seq_len,
+            use_residual=use_residual,
+            use_layer_norm=use_layer_norm
         )
         
         self.decoder = Decoder(
@@ -65,7 +67,9 @@ class Transformer(nn.Module):
             num_heads=config.num_heads,
             d_ff=config.d_ff,
             output_vocab_size=config.tgt_vocab_size,
-            max_seq_len=config.max_seq_len
+            max_seq_len=config.max_seq_len,
+            use_residual=use_residual,
+            use_layer_norm=use_layer_norm
         )
         
 
